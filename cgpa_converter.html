@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IIM Sirmaur – CGPA to Percentage Converter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0b0d11;
+      --surface: #13161d;
+      --card: #181c25;
+      --border: #252a36;
+      --accent: #c8a96e;
+      --accent2: #e8c98e;
+      --text: #e8e6e0;
+      --muted: #7a7f8e;
+      --green: #5dba82;
+      --red: #e06a5a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 80px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(200,169,110,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,169,110,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glow blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { width: 500px; height: 500px; background: var(--accent); top: -150px; left: -150px; }
+    .blob-2 { width: 400px; height: 400px; background: #3a6ea8; bottom: -100px; right: -100px; }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid rgba(200,169,110,0.3);
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900;
+      line-height: 1.1;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 300;
+      letter-spacing: 0.2px;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      margin-bottom: 20px;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    /* Input section */
+    .input-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    input[type="number"] {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      padding: 16px 20px;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(200,169,110,0.12);
+    }
+
+    input[type="number"].error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(224,106,90,0.12);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #0b0d11;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 28px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(200,169,110,0.3); }
+    .btn:active { transform: translateY(0); }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .error-msg {
+      font-size: 12px;
+      color: var(--red);
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0;
+    }
+
+    /* Result */
+    .result-area {
+      text-align: center;
+      animation: pulse 0.4s ease;
+    }
+
+    .result-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .result-pct {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3.5rem, 12vw, 5rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      transition: all 0.4s ease;
+    }
+
+    .result-formula {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .result-formula span {
+      color: var(--accent);
+    }
+
+    /* Formula reference card */
+    .formula-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 36px;
+      animation: fadeUp 0.9s ease both;
+    }
+
+    .formula-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 20px;
+      letter-spacing: 0.3px;
+    }
+
+    .formula-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .formula-row:last-child { border-bottom: none; }
+
+    .range-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      background: rgba(200,169,110,0.1);
+      border: 1px solid rgba(200,169,110,0.2);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .formula-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .formula-text strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 1px;
+      position: relative;
+      z-index: 1;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%   { transform: scale(0.97); }
+      60%  { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+
+    .hidden { display: none !important; }
+
+    /* Slider */
+    .slider-row {
+      margin-top: 18px;
+    }
+
+    .slider-top {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 4px rgba(200,169,110,0.2);
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 0 7px rgba(200,169,110,0.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="wrapper">
+    <!-- Header -->
+    <header class="header">
+      <div class="badge">IIM Sirmaur · Official Formula</div>
+      <h1>CGPA to <span>Percentage</span></h1>
+      <p class="subtitle">Academic Council approved conversion · MBA &amp; MBA-THM programs</p>
+    </header>
+
+    <!-- Main Card -->
+    <div class="card">
+      <label class="input-label">Enter your CGPA</label>
+      <div class="input-row">
+        <input type="number" id="cgpaInput" min="1.5" max="10" step="0.01" placeholder="e.g. 7.8"/>
+        <button class="btn" onclick="calculate()">Convert →</button>
+      </div>
+      <p class="hint">Valid range: 1.50 – 10.00</p>
+      <p class="error-msg" id="errorMsg">Please enter a CGPA between 1.50 and 10.00</p>
+
+      <!-- Slider -->
+      <div class="slider-row">
+        <div class="slider-top">
+          <span>1.50</span><span>Drag to adjust CGPA</span><span>10.00</span>
+        </div>
+        <input type="range" id="cgpaSlider" min="1.5" max="10" step="0.01" value="7.5" oninput="syncFromSlider(this.value)"/>
+      </div>
+
+      <!-- Result -->
+      <div class="divider"></div>
+      <div class="result-area" id="resultArea">
+        <p class="result-label">Percentage Equivalent</p>
+        <div class="result-pct" id="resultPct">—</div>
+        <p class="result-formula" id="resultFormula"></p>
+      </div>
+    </div>
+
+    <!-- Formula reference -->
+    <div class="formula-card">
+      <h2>Conversion Formula Reference</h2>
+
+      <div class="formula-row">
+        <div class="range-tag">7.50 – 10</div>
+        <div class="formula-text">
+          <strong>72 + 9.00 × (CGPA − 7.5)</strong><br/>
+          Highest band · excellent performers
+        </div>
+      </div>
+
+      <div class="formula-row">
+        <div class="range-tag">4.50 – 7.49</div>
+        <div class="formula-text">
+          <strong>55 + 5.66 × (CGPA − 4.5)</strong><br/>
+          Mid band · e.g. CGPA 5.4 → 60.09%
+        </div>
+      </div>
+
+      <div class="formula-row">
+        <div class="range-tag">1.50 – 4.49</div>
+        <div class="formula-text">
+          <strong>20 + 11.66 × (CGPA − 1.5)</strong><br/>
+          Lower band · foundational range
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Ratified by the Board of Governors · Ref: IIMS/PGPO/2023-24/3840 · Oct 28, 2023
+    </footer>
+  </div>
+
+  <script>
+    const cgpaInput  = document.getElementById('cgpaInput');
+    const cgpaSlider = document.getElementById('cgpaSlider');
+    const resultPct  = document.getElementById('resultPct');
+    const resultFormula = document.getElementById('resultFormula');
+    const errorMsg   = document.getElementById('errorMsg');
+
+    function computePercentage(cgpa) {
+      if (cgpa >= 7.50 && cgpa <= 10)
+        return { pct: 72 + 9.00 * (cgpa - 7.5), formula: `72 + 9.00 × (${cgpa} − 7.5)`, band: '7.50–10' };
+      if (cgpa >= 4.50 && cgpa < 7.50)
+        return { pct: 55 + 5.66 * (cgpa - 4.5), formula: `55 + 5.66 × (${cgpa} − 4.5)`, band: '4.50–7.49' };
+      if (cgpa >= 1.50 && cgpa < 4.50)
+        return { pct: 20 + 11.66 * (cgpa - 1.5), formula: `20 + 11.66 × (${cgpa} − 1.5)`, band: '1.50–4.49' };
+      return null;
+    }
+
+    function calculate() {
+      const val = parseFloat(cgpaInput.value);
+      errorMsg.style.display = 'none';
+      cgpaInput.classList.remove('error');
+
+      if (isNaN(val) || val < 1.5 || val > 10) {
+        cgpaInput.classList.add('error');
+        errorMsg.style.display = 'block';
+        resultPct.textContent = '—';
+        resultFormula.textContent = '';
+        return;
+      }
+
+      const res = computePercentage(val);
+      if (!res) return;
+
+      resultPct.textContent = res.pct.toFixed(2) + '%';
+      resultFormula.innerHTML = `<span>${res.formula}</span>`;
+
+      // Sync slider
+      cgpaSlider.value = val;
+
+      // Trigger animation
+      const ra = document.getElementById('resultArea');
+      ra.style.animation = 'none';
+      ra.offsetHeight; // reflow
+      ra.style.animation = 'pulse 0.4s ease';
+    }
+
+    function syncFromSlider(val) {
+      const rounded = parseFloat(parseFloat(val).toFixed(2));
+      cgpaInput.value = rounded;
+      errorMsg.style.display = 'none';
+      cgpaInput.classList.remove('error');
+
+      const res = computePercentage(rounded);
+      if (res) {
+        resultPct.textContent = res.pct.toFixed(2) + '%';
+        resultFormula.innerHTML = `<span>${res.formula}</span>`;
+      }
+    }
+
+    // Allow Enter key
+    cgpaInput.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+
+    // Auto-calculate on input
+    cgpaInput.addEventListener('input', () => {
+      const val = parseFloat(cgpaInput.value);
+      if (!isNaN(val) && val >= 1.5 && val <= 10) {
+        cgpaSlider.value = val;
+        const res = computePercentage(val);
+        if (res) {
+          resultPct.textContent = res.pct.toFixed(2) + '%';
+          resultFormula.innerHTML = `<span>${res.formula}</span>`;
+        }
+        errorMsg.style.display = 'none';
+        cgpaInput.classList.remove('error');
+      }
+    });
+
+    // Init with a default
+    syncFromSlider(7.5);
+    cgpaInput.value = '';
+    resultPct.textContent = '—';
+    resultFormula.textContent = '';
+  </script>
+</body>
+</html>
